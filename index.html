@@ -1,63 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta http-equiv="Content-Security-Policy"
-      content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https:;" />
-    <title>My App</title>
-    <style>
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
+<head>
+<meta charset="UTF-8" />
+<title>DentalFolio — Key Generator</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f1f5f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+  .card { background: #fff; border-radius: 16px; padding: 36px 40px; box-shadow: 0 4px 24px #0001; width: 100%; max-width: 420px; }
+  h1 { margin: 0 0 6px; font-size: 20px; color: #0f172a; }
+  p  { margin: 0 0 28px; font-size: 13px; color: #64748b; }
+  label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 5px; margin-top: 16px; }
+  input, select { width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; outline: none; }
+  input:focus, select:focus { border-color: #3b82f6; }
+  button { margin-top: 22px; width: 100%; padding: 12px; background: #0f172a; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; }
+  button:hover { background: #1e293b; }
+  .result { margin-top: 20px; display: none; }
+  .key-box { background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-family: monospace; font-size: 13px; color: #0f172a; word-break: break-all; line-height: 1.6; }
+  .copy-btn { margin-top: 10px; width: 100%; padding: 10px; background: #10b981; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .copy-btn:hover { background: #059669; }
+  .copied { background: #6366f1 !important; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🔑 Key Generator</h1>
+  <p>DentalFolio — Owner use only. Keep this page private.</p>
 
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, sans-serif;
-        background: #0f172a;
-        color: #f1f5f9;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
-        text-align: center;
-      }
+  <label>Customer Email</label>
+  <input type="email" id="email" placeholder="dr.ahmed@gmail.com" />
 
-      h1 {
-        font-size: 2rem;
-        font-weight: 700;
-        margin-bottom: 12px;
-        color: #38bdf8;
-      }
+  <label>Plan</label>
+  <select id="tier">
+    <option value="5">Basic — 5 cases</option>
+    <option value="20" selected>Pro — 20 cases</option>
+    <option value="50">Premium — 50 cases</option>
+  </select>
 
-      p {
-        font-size: 1rem;
-        line-height: 1.6;
-        color: #94a3b8;
-        max-width: 360px;
-      }
+  <button onclick="generate()">Generate Activation Key</button>
 
-      .badge {
-        margin-top: 32px;
-        display: inline-block;
-        background: #1e293b;
-        border: 1px solid #334155;
-        border-radius: 999px;
-        padding: 6px 18px;
-        font-size: 0.8rem;
-        color: #64748b;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>My App</h1>
-    <p>Replace this content with your own HTML, CSS, and JavaScript. This file will be packaged into an Android APK automatically.</p>
-    <span class="badge">Built with GitHub Actions</span>
-  </body>
+  <div class="result" id="result">
+    <label>Activation Key</label>
+    <div class="key-box" id="keyBox"></div>
+    <button class="copy-btn" id="copyBtn" onclick="copyKey()">Copy Key</button>
+  </div>
+</div>
+
+<script>
+const SALT = 's3cr3t_DentalFolio_SALT_2026'
+
+async function generate() {
+  const email = document.getElementById('email').value.trim()
+  const tier  = document.getElementById('tier').value
+  if (!email) { alert('Enter the customer email first.'); return }
+
+  const enc     = new TextEncoder()
+  const keyData = await crypto.subtle.importKey('raw', enc.encode(SALT), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+  const sig     = await crypto.subtle.sign('HMAC', keyData, enc.encode(`${email}|${tier}`))
+  const hex     = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('')
+
+  document.getElementById('keyBox').textContent = hex
+  document.getElementById('result').style.display = 'block'
+  document.getElementById('copyBtn').textContent = 'Copy Key'
+  document.getElementById('copyBtn').classList.remove('copied')
+}
+
+async function copyKey() {
+  const key = document.getElementById('keyBox').textContent
+  await navigator.clipboard.writeText(key)
+  const btn = document.getElementById('copyBtn')
+  btn.textContent = '✓ Copied!'
+  btn.classList.add('copied')
+  setTimeout(() => { btn.textContent = 'Copy Key'; btn.classList.remove('copied') }, 2000)
+}
+</script>
+</body>
 </html>
