@@ -160,19 +160,16 @@ jobs:
           npx cap add android
           npx cap sync android
 
-          # Fix: Capacitor generates a project with conflicting Kotlin stdlib
-          # variants (jdk7/jdk8 vs merged stdlib >= 1.8). Force a single
-          # consistent version so Gradle's duplicate-class check passes.
-          cat >> "$BUILD_DIR/android/app/build.gradle" << 'GRADLE'
-
-configurations.all {
-    resolutionStrategy {
-        force "org.jetbrains.kotlin:kotlin-stdlib:1.9.25"
-        force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.25"
-        force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.25"
-    }
-}
-GRADLE
+      # -------------------------------------------------------
+      # Fix: Kotlin stdlib duplicate class conflict
+      # Capacitor mixes kotlin-stdlib 1.8+ with old jdk7/jdk8
+      # shims that were merged in. Force one unified version.
+      # -------------------------------------------------------
+      - name: Fix Kotlin stdlib duplicate classes
+        run: |
+          GRADLE_FILE="$BUILD_DIR/android/app/build.gradle"
+          printf '\nconfigurations.all {\n    resolutionStrategy {\n        force "org.jetbrains.kotlin:kotlin-stdlib:1.9.25"\n        force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.25"\n        force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.25"\n    }\n}\n' >> "$GRADLE_FILE"
+          echo "Kotlin resolution strategy appended to $GRADLE_FILE"
 
       # -------------------------------------------------------
       # 8. Build the Debug APK with Gradle
