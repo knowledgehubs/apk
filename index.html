@@ -285,13 +285,8 @@ textarea.input{resize:none;}
   </div>
 
   <div id="screens">
-
-    <div id="screen-today" class="screen active">
-      </div>
-
-    <div id="screen-cats" class="screen">
-      </div>
-
+    <div id="screen-today" class="screen active"></div>
+    <div id="screen-cats" class="screen"></div>
     <div id="screen-search" class="screen">
       <div class="search-wrap">
         <div class="search-inner">
@@ -301,7 +296,6 @@ textarea.input{resize:none;}
       </div>
       <div id="search-results"></div>
     </div>
-
   </div>
 
   <nav id="nav">
@@ -325,10 +319,10 @@ textarea.input{resize:none;}
     </button>
   </nav>
 
-</div><div id="toast-wrap"></div>
+</div>
 
+<div id="toast-wrap"></div>
 <div id="inapp-wrap"></div>
-
 <div class="overlay" id="overlay" onclick="closeAllSheets()"></div>
 
 <div class="sheet" id="task-sheet">
@@ -341,7 +335,6 @@ textarea.input{resize:none;}
     <div class="form-group">
       <input class="input" id="task-name" placeholder="What needs to be done?" autocomplete="off" maxlength="120"/>
     </div>
-
     <div class="input-row">
       <div class="form-group" style="flex:1">
         <label class="form-label">Date</label>
@@ -352,7 +345,6 @@ textarea.input{resize:none;}
         <input class="input" id="task-time" type="time"/>
       </div>
     </div>
-
     <div class="form-group">
       <label class="form-label">Priority</label>
       <div class="chip-row">
@@ -361,17 +353,14 @@ textarea.input{resize:none;}
         <div class="chip priority-chip-l sel" onclick="setPriority('low')">🔵 Normal</div>
       </div>
     </div>
-
     <div class="form-group">
       <label class="form-label">Category</label>
       <div class="chip-row" id="cat-chips"></div>
     </div>
-
     <div class="form-group">
       <label class="form-label">Tags</label>
       <div class="chip-row" id="tag-chips"></div>
     </div>
-
     <div class="form-group">
       <label class="form-label">Repeat</label>
       <div class="chip-row repeat-opts">
@@ -392,7 +381,6 @@ textarea.input{resize:none;}
         </div>
       </div>
     </div>
-
     <div class="form-group">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <label class="form-label" style="margin-bottom:0">Deadline</label>
@@ -411,7 +399,6 @@ textarea.input{resize:none;}
         </div>
       </div>
     </div>
-
     <div class="form-group">
       <label class="form-label">Notes</label>
       <textarea class="input" id="task-notes" rows="3" placeholder="Add notes or details…"></textarea>
@@ -509,7 +496,7 @@ textarea.input{resize:none;}
     </div>
     <div class="settings-row" onclick="testNotification()" style="cursor:pointer;">
       <div>
-        <div class="settings-label">Test Notification</div>
+        <div class="settings-label">Test Native Notification</div>
         <div class="settings-sub">Fire a test notification now</div>
       </div>
       <i class="fas fa-chevron-right" style="color:var(--text-mut);"></i>
@@ -528,8 +515,7 @@ textarea.input{resize:none;}
   </div>
 </div>
 
-<div id="screen-stats" class="screen" style="display:none;">
-  </div>
+<div id="screen-stats" class="screen" style="display:none;"></div>
 
 <script>
 // ════════════════════════════════════════════════════════════
@@ -578,9 +564,6 @@ function fmtTime(t){
 }
 function hashCode(s){let h=0;for(let i=0;i<s.length;i++)h=(Math.imul(31,h)+s.charCodeAt(i))|0;return h;}
 
-// ════════════════════════════════════════════════════════════
-//   PERSISTENCE
-// ════════════════════════════════════════════════════════════
 function save(){ try{localStorage.setItem(DB_KEY,JSON.stringify(DB));}catch(e){} }
 function load(){
   try{
@@ -589,9 +572,6 @@ function load(){
   }catch(e){}
 }
 
-// ════════════════════════════════════════════════════════════
-//   THEME
-// ════════════════════════════════════════════════════════════
 function applyTheme(){
   document.body.classList.toggle('light',!DB.settings.dark);
   const dt=document.getElementById('dark-toggle');
@@ -599,9 +579,7 @@ function applyTheme(){
   const st=document.getElementById('sound-toggle');
   if(st)st.classList.toggle('on',DB.settings.sound);
 }
-function toggleDark(){
-  DB.settings.dark=!DB.settings.dark; save(); applyTheme();
-}
+function toggleDark(){ DB.settings.dark=!DB.settings.dark; save(); applyTheme(); }
 function toggleSound(){
   DB.settings.sound=!DB.settings.sound; save(); applyTheme();
   const st=document.getElementById('sound-toggle');
@@ -609,7 +587,7 @@ function toggleSound(){
 }
 
 // ════════════════════════════════════════════════════════════
-//   AUDIO
+//   AUDIO & UI ALERTS
 // ════════════════════════════════════════════════════════════
 function playClick(){
   if(!DB.settings.sound)return;
@@ -619,10 +597,6 @@ function playSuccess(){
   if(!DB.settings.sound)return;
   try{const ac=new(window.AudioContext||window.webkitAudioContext)();[[440,0],[554,0.08],[660,0.16]].forEach(([f,t])=>{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=f;g.gain.setValueAtTime(0.06,ac.currentTime+t);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+t+0.12);o.start(ac.currentTime+t);o.stop(ac.currentTime+t+0.15);});}catch(e){}
 }
-
-// ════════════════════════════════════════════════════════════
-//   TOAST
-// ════════════════════════════════════════════════════════════
 function showToast(msg){
   const wrap=document.getElementById('toast-wrap');
   const el=document.createElement('div');
@@ -640,7 +614,7 @@ function showInAppNotif(title,body,icon='bell'){
 }
 
 // ════════════════════════════════════════════════════════════
-//   SHEETS
+//   SHEETS & TABS
 // ════════════════════════════════════════════════════════════
 function openSheet(id){
   document.getElementById('overlay').classList.add('open');
@@ -656,14 +630,11 @@ function closeAllSheets(){
   document.getElementById('overlay').classList.remove('open');
 }
 
-// ════════════════════════════════════════════════════════════
-//   TAB SWITCHING
-// ════════════════════════════════════════════════════════════
 function switchTab(tab){
   currentTab=tab;
   document.querySelectorAll('.screen').forEach(s=>{
     s.classList.remove('active');
-    s.style.display=''; // Fixes the overlap by removing leftover inline styles
+    s.style.display='';
   });
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   const screens={today:'screen-today',cats:'screen-cats',search:'screen-search',stats:'screen-stats'};
@@ -678,9 +649,6 @@ function switchTab(tab){
   else if(tab==='stats')renderStats();
 }
 
-// ════════════════════════════════════════════════════════════
-//   INBOX DOT
-// ════════════════════════════════════════════════════════════
 function updateInboxDot(){
   const n=DB.tasks.filter(t=>t.categoryId==='inbox'&&!t.completed).length;
   const dot=document.getElementById('inbox-dot');
@@ -688,7 +656,7 @@ function updateInboxDot(){
 }
 
 // ════════════════════════════════════════════════════════════
-//   TODAY VIEW
+//   RENDER LOGIC
 // ════════════════════════════════════════════════════════════
 function renderToday(){
   const scr=document.getElementById('screen-today');
@@ -703,7 +671,6 @@ function renderToday(){
     ?`Today · ${now.toLocaleDateString('en-US',{month:'long',day:'numeric'})}`
     :new Date(selectedDate+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
 
-  // Build timeline groups
   const sorted=[...dayTasks].sort((a,b)=>{
     if(a.completed!==b.completed)return a.completed?1:-1;
     if(!a.time&&!b.time)return 0;if(!a.time)return 1;if(!b.time)return -1;
@@ -729,27 +696,20 @@ function renderToday(){
     });
     timelineHtml+=`</div></div>`;
   });
-  if(!timelineHtml){
-    timelineHtml=`<div class="empty"><div class="empty-icon">🗓️</div><p>No tasks for this day.</p><small>Tap + to add your first task!</small></div>`;
-  }
+  if(!timelineHtml) timelineHtml=`<div class="empty"><div class="empty-icon">🗓️</div><p>No tasks for this day.</p><small>Tap + to add your first task!</small></div>`;
 
-  // Render progress ring SVG
   const r=18,circ=2*Math.PI*r;
   const dash=pct/100*circ;
 
   scr.innerHTML=`
     ${buildCalStrip()}
     <div class="today-hdr">
-      <div class="today-info">
-        <p>${dateLabel}</p>
-        <h2>${done} of ${total} done</h2>
-      </div>
+      <div class="today-info"><p>${dateLabel}</p><h2>${done} of ${total} done</h2></div>
       <div class="progress-pill">
         <div class="progress-ring">
           <svg width="44" height="44" viewBox="0 0 44 44">
             <circle cx="22" cy="22" r="${r}" fill="none" stroke="var(--border-h)" stroke-width="3.5"/>
-            <circle cx="22" cy="22" r="${r}" fill="none" stroke="var(--accent)" stroke-width="3.5"
-              stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" stroke-linecap="round"/>
+            <circle cx="22" cy="22" r="${r}" fill="none" stroke="var(--accent)" stroke-width="3.5" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" stroke-linecap="round"/>
           </svg>
           <div class="progress-ring-pct">${pct}%</div>
         </div>
@@ -763,8 +723,7 @@ function renderToday(){
 
 function buildCalStrip(){
   const today=new Date();
-  const year=today.getFullYear();
-  const month=today.getMonth();
+  const year=today.getFullYear();const month=today.getMonth();
   const last=new Date(year,month+1,0).getDate();
   let days='';
   for(let i=1;i<=last;i++){
@@ -775,113 +734,69 @@ function buildCalStrip(){
     const hasTasks=DB.tasks.some(t=>t.date===ds);
     const dayN=d.toLocaleDateString('en-US',{weekday:'short'}).toUpperCase().slice(0,3);
     days+=`<div class="cal-day${isSel?' selected':''}${isToday&&!isSel?' today':''}" onclick="selectDate('${ds}')">
-      <span class="cal-dn">${dayN}</span>
-      <span class="cal-num">${i}</span>
-      ${hasTasks?`<div class="cal-dot"></div>`:`<div class="cal-dot-empty"></div>`}
+      <span class="cal-dn">${dayN}</span><span class="cal-num">${i}</span>${hasTasks?`<div class="cal-dot"></div>`:`<div class="cal-dot-empty"></div>`}
     </div>`;
   }
-  days+=`<div class="cal-day cal-more" onclick="openCalSheet()">
-    <span class="cal-dn"><i class="fas fa-calendar"></i></span>
-    <span class="cal-num" style="font-size:14px;">···</span>
-    <div class="cal-dot-empty"></div>
-  </div>`;
-  // Scroll to selected
-  setTimeout(()=>{
-    const strip=document.querySelector('.cal-strip');
-    const sel=document.querySelector('.cal-day.selected');
-    if(strip&&sel)strip.scrollTo({left:sel.offsetLeft-80,behavior:'smooth'});
-  },50);
+  days+=`<div class="cal-day cal-more" onclick="openCalSheet()"><span class="cal-dn"><i class="fas fa-calendar"></i></span><span class="cal-num" style="font-size:14px;">···</span><div class="cal-dot-empty"></div></div>`;
+  setTimeout(()=>{const strip=document.querySelector('.cal-strip');const sel=document.querySelector('.cal-day.selected');if(strip&&sel)strip.scrollTo({left:sel.offsetLeft-80,behavior:'smooth'});},50);
   return `<div class="cal-strip"><div class="cal-strip-inner">${days}</div></div>`;
 }
 
 function selectDate(d){selectedDate=d;renderToday();}
 
-// ════════════════════════════════════════════════════════════
-//   TASK ROW
-// ════════════════════════════════════════════════════════════
 function taskRow(task){
   const cat=DB.categories.find(c=>c.id===task.categoryId)||{color:'#64748b',name:''};
   const prioColor={high:'var(--high)',med:'var(--med)',low:'var(--accent)'}[task.priority||'low'];
   const tags=(task.tags||[]).slice(0,2).map(t=>`<span class="task-tag-pill">${t}</span>`).join('');
-  return `<div class="task-item${task.completed?' done':''}" id="ti-${task.id}"
-    ontouchstart="swipeStart(event,'${task.id}')" ontouchmove="swipeMove(event)" ontouchend="swipeEnd(event,'${task.id}')">
+  return `<div class="task-item${task.completed?' done':''}" id="ti-${task.id}" ontouchstart="swipeStart(event,'${task.id}')" ontouchmove="swipeMove(event)" ontouchend="swipeEnd(event,'${task.id}')">
     <div class="task-priority-bar" style="background:${prioColor};min-width:3px;"></div>
-    <div class="task-cb${task.completed?' checked':''}" onclick="event.stopPropagation();toggleDone('${task.id}',this)">
-      ${task.completed?'<i class="fas fa-check"></i>':''}
-    </div>
+    <div class="task-cb${task.completed?' checked':''}" onclick="event.stopPropagation();toggleDone('${task.id}',this)">${task.completed?'<i class="fas fa-check"></i>':''}</div>
     <div class="task-body" onclick="openTaskModal(${JSON.stringify(task).replace(/"/g,'&quot;')})">
       <div class="task-name">${task.name}</div>
       <div class="task-meta">
         ${task.time?`<span class="task-time-badge"><i class="fas fa-clock" style="font-size:9px;"></i>${fmtTime(task.time)}</span>`:''}
         ${task.categoryId&&task.categoryId!=='inbox'?`<span class="task-cat-badge" style="background:${cat.color}20;color:${cat.color};">${cat.name}</span>`:''}
-        ${tags}
-        ${task.notes?`<span class="task-note-icon"><i class="fas fa-note-sticky"></i></span>`:''}
+        ${tags}${task.notes?`<span class="task-note-icon"><i class="fas fa-note-sticky"></i></span>`:''}
       </div>
     </div>
     <button class="task-del" onclick="event.stopPropagation();deleteTask('${task.id}')"><i class="fas fa-trash-can"></i></button>
   </div>`;
 }
 
-// ════════════════════════════════════════════════════════════
-//   SWIPE GESTURES
-// ════════════════════════════════════════════════════════════
 let swX=0,swY=0;
 function swipeStart(e,id){swX=e.touches[0].clientX;swY=e.touches[0].clientY;}
 function swipeMove(e){if(Math.abs(e.touches[0].clientX-swX)>Math.abs(e.touches[0].clientY-swY))e.preventDefault();}
 function swipeEnd(e,id){
-  const dx=e.changedTouches[0].clientX-swX;
-  const dy=e.changedTouches[0].clientY-swY;
+  const dx=e.changedTouches[0].clientX-swX;const dy=e.changedTouches[0].clientY-swY;
   if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>55){
     if(dx>0){const t=DB.tasks.find(t=>t.id===id);if(t&&!t.completed)toggleDone(id,document.querySelector(`#ti-${id} .task-cb`));}
     else deleteTask(id);
   }
 }
 
-// ════════════════════════════════════════════════════════════
-//   TOGGLE DONE
-// ════════════════════════════════════════════════════════════
 async function toggleDone(id,cbEl){
-  const task=DB.tasks.find(t=>t.id===id);
-  if(!task)return;
-  playClick();
-  task.completed=!task.completed;
-  if(task.completed){
-    await cancelTaskNotifs(id);
-    task.completedAt=new Date().toISOString();
-    playSuccess();
-  } else {
-    task.completedAt=null;
-    await scheduleTaskReminders(task);
-  }
+  const task=DB.tasks.find(t=>t.id===id);if(!task)return;
+  playClick(); task.completed=!task.completed;
+  if(task.completed){ await cancelTaskNotifs(id); task.completedAt=new Date().toISOString(); playSuccess(); } 
+  else { task.completedAt=null; await scheduleTaskReminders(task); }
   save(); updateInboxDot();
   setTimeout(()=>{if(currentTab==='today')renderToday();else if(currentTab==='cats')renderCategories();},300);
 }
 
-// ════════════════════════════════════════════════════════════
-//   DELETE TASK
-// ════════════════════════════════════════════════════════════
 async function deleteTask(id){
   if(!confirm('Delete this task?'))return;
   await cancelTaskNotifs(id);
   DB.tasks=DB.tasks.filter(t=>t.id!==id);
   save(); showToast('🗑️ Task deleted'); updateInboxDot();
-  if(currentTab==='today')renderToday();
-  else if(currentTab==='cats')renderCategories();
-  else if(currentTab==='search')renderSearch();
+  if(currentTab==='today')renderToday(); else if(currentTab==='cats')renderCategories(); else if(currentTab==='search')renderSearch();
 }
 
-// ════════════════════════════════════════════════════════════
-//   CATEGORIES VIEW
-// ════════════════════════════════════════════════════════════
 function renderCategories(){
-  const scr=document.getElementById('screen-cats');
-  if(!scr)return;
-  let html=`<div class="screen-title">My Lists</div>`;
-  html+=`<div class="section-label">Categories</div><div class="cat-grid">`;
+  const scr=document.getElementById('screen-cats'); if(!scr)return;
+  let html=`<div class="screen-title">My Lists</div><div class="section-label">Categories</div><div class="cat-grid">`;
   DB.categories.forEach(cat=>{
     const tasks=DB.tasks.filter(t=>t.categoryId===cat.id);
-    const done=tasks.filter(t=>t.completed).length;
-    const total=tasks.length;
+    const done=tasks.filter(t=>t.completed).length; const total=tasks.length;
     const pct=total>0?Math.round(done/total*100):0;
     const inboxAlert=cat.id==='inbox'&&tasks.filter(t=>!t.completed).length>0;
     html+=`<div class="cat-card" onclick="openCatDetail('${cat.id}')">
@@ -895,7 +810,6 @@ function renderCategories(){
     </div>`;
   });
   html+=`</div>`;
-  // Tags
   if(DB.tags.length>0){
     html+=`<div class="section-label">Tags</div><div class="tags-wrap">`;
     DB.tags.forEach(t=>{
@@ -912,57 +826,30 @@ function openCatDetail(catId){
   const cat=DB.categories.find(c=>c.id===catId);if(!cat)return;
   document.getElementById('cat-detail-title').textContent=cat.name;
   const tasks=DB.tasks.filter(t=>t.categoryId===catId);
-  const sorted=[...tasks].sort((a,b)=>{
-    if(a.completed!==b.completed)return a.completed?1:-1;
-    if(!a.date)return 1;if(!b.date)return -1;
-    return a.date.localeCompare(b.date);
-  });
-  let html=sorted.length===0
-    ?`<div class="empty"><div class="empty-icon">✅</div><p>No tasks here yet.</p><small>Tap + to add one!</small></div>`
-    :`<div class="card" style="overflow:hidden;">${sorted.map((t,i)=>(i>0?'<div class="divider"></div>':'')+taskRow(t)).join('')}</div>`;
+  const sorted=[...tasks].sort((a,b)=>{if(a.completed!==b.completed)return a.completed?1:-1;if(!a.date)return 1;if(!b.date)return -1;return a.date.localeCompare(b.date);});
+  let html=sorted.length===0?`<div class="empty"><div class="empty-icon">✅</div><p>No tasks here yet.</p><small>Tap + to add one!</small></div>`:`<div class="card" style="overflow:hidden;">${sorted.map((t,i)=>(i>0?'<div class="divider"></div>':'')+taskRow(t)).join('')}</div>`;
   html+=`<div style="margin-top:12px;"><button class="btn btn-secondary" onclick="openTaskModal(null)"><i class="fas fa-plus"></i> Add Task</button></div>`;
   document.getElementById('cat-detail-body').innerHTML=html;
   openSheet('cat-detail-sheet');
 }
 
 function searchByTag(tag){switchTab('search');setTimeout(()=>{document.getElementById('search-inp').value=tag;filterSearch();},100);}
-
-// ════════════════════════════════════════════════════════════
-//   SEARCH VIEW
-// ════════════════════════════════════════════════════════════
-function renderSearch(){
-  filterSearch();
-}
+function renderSearch(){filterSearch();}
 function filterSearch(){
   const q=(document.getElementById('search-inp')?.value||'').toLowerCase().trim();
   let results=DB.tasks;
-  if(q){results=DB.tasks.filter(t=>{
-    const cat=DB.categories.find(c=>c.id===t.categoryId);
-    return t.name.toLowerCase().includes(q)||(t.notes||'').toLowerCase().includes(q)||
-      (t.tags||[]).some(tg=>tg.toLowerCase().includes(q))||(cat&&cat.name.toLowerCase().includes(q));
-  });}
-  const sorted=[...results].sort((a,b)=>{
-    if(a.completed!==b.completed)return a.completed?1:-1;
-    return new Date(b.createdAt||0)-new Date(a.createdAt||0);
-  });
-  const wrap=document.getElementById('search-results');
-  if(!wrap)return;
+  if(q){results=DB.tasks.filter(t=>{const cat=DB.categories.find(c=>c.id===t.categoryId);return t.name.toLowerCase().includes(q)||(t.notes||'').toLowerCase().includes(q)||(t.tags||[]).some(tg=>tg.toLowerCase().includes(q))||(cat&&cat.name.toLowerCase().includes(q));});}
+  const sorted=[...results].sort((a,b)=>{if(a.completed!==b.completed)return a.completed?1:-1;return new Date(b.createdAt||0)-new Date(a.createdAt||0);});
+  const wrap=document.getElementById('search-results');if(!wrap)return;
   const hdr=q?`Results for "${q}" (${results.length})`:`All Tasks (${results.length})`;
   let html=`<div class="section-label">${hdr}</div>`;
-  if(sorted.length===0){
-    html+=`<div class="empty"><div class="empty-icon">🔍</div><p>${q?'No results found':'No tasks yet'}</p></div>`;
-  } else {
-    html+=`<div class="card" style="margin:0 20px;overflow:hidden;">${sorted.map((t,i)=>(i>0?'<div class="divider"></div>':'')+taskRow(t)).join('')}</div>`;
-  }
+  if(sorted.length===0) html+=`<div class="empty"><div class="empty-icon">🔍</div><p>${q?'No results found':'No tasks yet'}</p></div>`;
+  else html+=`<div class="card" style="margin:0 20px;overflow:hidden;">${sorted.map((t,i)=>(i>0?'<div class="divider"></div>':'')+taskRow(t)).join('')}</div>`;
   wrap.innerHTML=html;
 }
 
-// ════════════════════════════════════════════════════════════
-//   STATS VIEW
-// ════════════════════════════════════════════════════════════
 function renderStats(){
-  const scr=document.getElementById('screen-stats');
-  if(!scr)return;
+  const scr=document.getElementById('screen-stats');if(!scr)return;
   const today=todayStr();
   const todayTasks=DB.tasks.filter(t=>t.date===today);
   const todayDone=todayTasks.filter(t=>t.completed).length;
@@ -970,7 +857,6 @@ function renderStats(){
   const totalDone=DB.tasks.filter(t=>t.completed).length;
   const totalPct=totalTasks>0?Math.round(totalDone/totalTasks*100):0;
   const highPrio=DB.tasks.filter(t=>t.priority==='high'&&!t.completed).length;
-  // Week stats
   const weekStats=[];
   for(let i=6;i>=0;i--){
     const d=new Date();d.setDate(d.getDate()-i);
@@ -983,37 +869,17 @@ function renderStats(){
   scr.innerHTML=`
     <div class="screen-title">Statistics</div>
     <div style="padding:0 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px;">
-      <div class="card card-p" style="text-align:center;">
-        <div style="font-size:28px;font-weight:800;color:var(--accent);">${todayDone}/${todayTasks.length}</div>
-        <div style="font-size:12px;color:var(--text-mut);margin-top:4px;">Today Done</div>
-      </div>
-      <div class="card card-p" style="text-align:center;">
-        <div style="font-size:28px;font-weight:800;color:var(--success);">${totalPct}%</div>
-        <div style="font-size:12px;color:var(--text-mut);margin-top:4px;">Overall Done</div>
-      </div>
-      <div class="card card-p" style="text-align:center;">
-        <div style="font-size:28px;font-weight:800;color:var(--warning);">${highPrio}</div>
-        <div style="font-size:12px;color:var(--text-mut);margin-top:4px;">Urgent Tasks</div>
-      </div>
-      <div class="card card-p" style="text-align:center;">
-        <div style="font-size:28px;font-weight:800;color:var(--text);">${totalTasks}</div>
-        <div style="font-size:12px;color:var(--text-mut);margin-top:4px;">Total Tasks</div>
-      </div>
+      <div class="card card-p" style="text-align:center;"><div style="font-size:28px;font-weight:800;color:var(--accent);">${todayDone}/${todayTasks.length}</div><div style="font-size:12px;color:var(--text-mut);margin-top:4px;">Today Done</div></div>
+      <div class="card card-p" style="text-align:center;"><div style="font-size:28px;font-weight:800;color:var(--success);">${totalPct}%</div><div style="font-size:12px;color:var(--text-mut);margin-top:4px;">Overall Done</div></div>
+      <div class="card card-p" style="text-align:center;"><div style="font-size:28px;font-weight:800;color:var(--warning);">${highPrio}</div><div style="font-size:12px;color:var(--text-mut);margin-top:4px;">Urgent Tasks</div></div>
+      <div class="card card-p" style="text-align:center;"><div style="font-size:28px;font-weight:800;color:var(--text);">${totalTasks}</div><div style="font-size:12px;color:var(--text-mut);margin-top:4px;">Total Tasks</div></div>
     </div>
     <div class="section-label">Last 7 Days</div>
     <div class="card card-p" style="margin:0 20px;">
       <div style="display:flex;align-items:flex-end;gap:8px;height:80px;margin-bottom:8px;">
-        ${weekStats.map(w=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
-          <div style="flex:1;display:flex;align-items:flex-end;width:100%;">
-            <div style="width:100%;height:${w.total?Math.max(8,Math.round(w.total/maxBar*60)):4}px;background:${w.total?'var(--accent)':'var(--border)'};border-radius:5px 5px 0 0;transition:height 0.4s ease;position:relative;">
-              ${w.done>0&&w.total>0?`<div style="position:absolute;bottom:0;left:0;right:0;height:${Math.round(w.done/w.total*100)}%;background:var(--success);border-radius:5px 5px 0 0;"></div>`:''}
-            </div>
-          </div>
-        </div>`).join('')}
+        ${weekStats.map(w=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;"><div style="flex:1;display:flex;align-items:flex-end;width:100%;"><div style="width:100%;height:${w.total?Math.max(8,Math.round(w.total/maxBar*60)):4}px;background:${w.total?'var(--accent)':'var(--border)'};border-radius:5px 5px 0 0;transition:height 0.4s ease;position:relative;">${w.done>0&&w.total>0?`<div style="position:absolute;bottom:0;left:0;right:0;height:${Math.round(w.done/w.total*100)}%;background:var(--success);border-radius:5px 5px 0 0;"></div>`:''}</div></div></div>`).join('')}
       </div>
-      <div style="display:flex;gap:8px;">
-        ${weekStats.map(w=>`<div style="flex:1;text-align:center;font-size:10px;font-weight:700;color:var(--text-mut);">${w.label}</div>`).join('')}
-      </div>
+      <div style="display:flex;gap:8px;">${weekStats.map(w=>`<div style="flex:1;text-align:center;font-size:10px;font-weight:700;color:var(--text-mut);">${w.label}</div>`).join('')}</div>
     </div>
     <div class="section-label">By Category</div>
     <div style="padding:0 20px;display:flex;flex-direction:column;gap:8px;">
@@ -1023,28 +889,15 @@ function renderStats(){
         const p=t.length>0?Math.round(d/t.length*100):0;
         return `<div class="card card-p" style="display:flex;align-items:center;gap:12px;">
           <div class="cat-card-icon" style="background:${cat.color}20;color:${cat.color};width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;"><i class="fas ${cat.icon||'fa-folder'}"></i></div>
-          <div style="flex:1;">
-            <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span style="font-size:14px;font-weight:600;">${cat.name}</span><span style="font-size:13px;font-weight:700;color:${cat.color};">${p}%</span></div>
-            <div class="cat-mini-bar"><div class="cat-mini-fill" style="width:${p}%;background:${cat.color};"></div></div>
-          </div>
+          <div style="flex:1;"><div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span style="font-size:14px;font-weight:600;">${cat.name}</span><span style="font-size:13px;font-weight:700;color:${cat.color};">${p}%</span></div><div class="cat-mini-bar"><div class="cat-mini-fill" style="width:${p}%;background:${cat.color};"></div></div></div>
         </div>`;
       }).join('')}
     </div>
   `;
 }
 
-// ════════════════════════════════════════════════════════════
-//   FULL CALENDAR SHEET
-// ════════════════════════════════════════════════════════════
-function openCalSheet(){
-  calViewDate=new Date(selectedDate);
-  renderCalGrid();
-  openSheet('cal-sheet');
-}
-function changeMonth(delta){
-  calViewDate.setMonth(calViewDate.getMonth()+delta);
-  renderCalGrid();
-}
+function openCalSheet(){calViewDate=new Date(selectedDate);renderCalGrid();openSheet('cal-sheet');}
+function changeMonth(delta){calViewDate.setMonth(calViewDate.getMonth()+delta);renderCalGrid();}
 function renderCalGrid(){
   const y=calViewDate.getFullYear();const m=calViewDate.getMonth();
   const first=new Date(y,m,1).getDay();const last=new Date(y,m+1,0).getDate();
@@ -1056,114 +909,47 @@ function renderCalGrid(){
     const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     const isTod=ds===today;const isSel=ds===selectedDate;
     const hasTasks=DB.tasks.some(t=>t.date===ds);
-    html+=`<div class="cal-grid-day" onclick="pickCalDate('${ds}')" style="background:${isSel?'var(--accent)':isTod?'var(--accent-g)':'transparent'};color:${isSel?'#fff':'var(--text)'};border:${isTod&&!isSel?'1.5px solid var(--accent)':'1.5px solid transparent'};">
-      ${day}${hasTasks?`<div style="width:4px;height:4px;background:${isSel?'rgba(255,255,255,0.7)':'var(--accent)'};border-radius:50%;margin:2px auto 0;"></div>`:''}
-    </div>`;
+    html+=`<div class="cal-grid-day" onclick="pickCalDate('${ds}')" style="background:${isSel?'var(--accent)':isTod?'var(--accent-g)':'transparent'};color:${isSel?'#fff':'var(--text)'};border:${isTod&&!isSel?'1.5px solid var(--accent)':'1.5px solid transparent'};">${day}${hasTasks?`<div style="width:4px;height:4px;background:${isSel?'rgba(255,255,255,0.7)':'var(--accent)'};border-radius:50%;margin:2px auto 0;"></div>`:''}</div>`;
   }
   document.getElementById('cal-grid').innerHTML=html;
 }
 function pickCalDate(ds){selectedDate=ds;closeSheet('cal-sheet');renderToday();}
 
-// ════════════════════════════════════════════════════════════
-//   TASK MODAL
-// ════════════════════════════════════════════════════════════
 function openTaskModal(task, preDate=null){
-  editingTaskId=task?task.id:null;
-  taskPriority=task?task.priority||'low':'low';
-  taskRepeat=task?task.repeat||'none':'none';
-  taskDeadline=task&&task.deadlineStart?true:false;
-  selectedTags=task?[...(task.tags||[])]:[]; 
-  selectedCatId=task?task.categoryId:'inbox';
+  editingTaskId=task?task.id:null; taskPriority=task?task.priority||'low':'low'; taskRepeat=task?task.repeat||'none':'none'; taskDeadline=task&&task.deadlineStart?true:false;
+  selectedTags=task?[...(task.tags||[])]:[]; selectedCatId=task?task.categoryId:'inbox';
   document.getElementById('task-sheet-title').textContent=task?'Edit Task':'New Task';
-  document.getElementById('task-name').value=task?task.name:'';
-  document.getElementById('task-date').value=task?task.date:(preDate||todayStr());
-  document.getElementById('task-time').value=task?task.time||'':'';
-  document.getElementById('task-notes').value=task?task.notes||'':'';
-  // Priority chips
-  document.querySelectorAll('.priority-chip-h,.priority-chip-m,.priority-chip-l').forEach(c=>c.classList.remove('sel'));
-  const pc=document.querySelector(`.priority-chip-${taskPriority==='high'?'h':taskPriority==='med'?'m':'l'}`);
-  if(pc)pc.classList.add('sel');
-  // Repeat
-  document.querySelectorAll('.repeat-opts .chip').forEach((c,i)=>{
-    const vals=['none','daily','weekly','monthly','custom'];
-    c.classList.toggle('sel',vals[i]===taskRepeat);
-  });
-  document.getElementById('repeat-custom').style.display=taskRepeat==='custom'?'block':'none';
-  if(task&&task.repeatInterval)document.getElementById('repeat-interval').value=task.repeatInterval;
-  if(task&&task.repeatUnit)document.getElementById('repeat-unit').value=task.repeatUnit;
-  // Deadline
-  const dtog=document.getElementById('deadline-toggle');
-  dtog.classList.toggle('on',taskDeadline);
+  document.getElementById('task-name').value=task?task.name:''; document.getElementById('task-date').value=task?task.date:(preDate||todayStr());
+  document.getElementById('task-time').value=task?task.time||'':''; document.getElementById('task-notes').value=task?task.notes||'':'';
+  setPriority(taskPriority); setRepeat(taskRepeat);
+  
+  const dtog=document.getElementById('deadline-toggle'); dtog.classList.toggle('on',taskDeadline);
   document.getElementById('deadline-sec').style.display=taskDeadline?'block':'none';
-  if(task&&task.deadlineStart)document.getElementById('dl-start').value=task.deadlineStart;
-  if(task&&task.deadlineEnd)document.getElementById('dl-end').value=task.deadlineEnd;
-  // Category chips
-  const catChips=document.getElementById('cat-chips');
-  catChips.innerHTML=DB.categories.map(c=>`<div class="chip chip-sm${c.id===selectedCatId?' sel':''}" style="${c.id===selectedCatId?`background:${c.color};color:#fff;border-color:transparent;`:''}" onclick="selectCat('${c.id}')">${c.name}</div>`).join('');
-  // Tag chips
-  const tagChips=document.getElementById('tag-chips');
-  tagChips.innerHTML=DB.tags.map(t=>`<div class="chip chip-sm${selectedTags.includes(t)?' sel':''}" style="${selectedTags.includes(t)?'background:var(--accent);color:#fff;border-color:transparent;':''}" onclick="toggleTag('${t}')">${t}</div>`).join('');
-  // Footer buttons
+  if(task&&task.deadlineStart)document.getElementById('dl-start').value=task.deadlineStart; if(task&&task.deadlineEnd)document.getElementById('dl-end').value=task.deadlineEnd;
+  
+  document.getElementById('cat-chips').innerHTML=DB.categories.map(c=>`<div class="chip chip-sm${c.id===selectedCatId?' sel':''}" style="${c.id===selectedCatId?`background:${c.color};color:#fff;border-color:transparent;`:''}" onclick="selectCat('${c.id}')">${c.name}</div>`).join('');
+  document.getElementById('tag-chips').innerHTML=DB.tags.map(t=>`<div class="chip chip-sm${selectedTags.includes(t)?' sel':''}" style="${selectedTags.includes(t)?'background:var(--accent);color:#fff;border-color:transparent;':''}" onclick="toggleTag('${t}')">${t}</div>`).join('');
+  
   const btns=document.getElementById('task-btns');
   btns.innerHTML=`<button class="btn btn-primary" onclick="saveTask()"><i class="fas fa-check"></i> Save Task</button>`;
-  if(editingTaskId){
-    btns.innerHTML+=`<button class="btn btn-danger btn-sm" style="width:auto;margin-left:8px;" onclick="confirmDeleteTask()"><i class="fas fa-trash-can"></i></button>`;
-  }
-  openSheet('task-sheet');
-  setTimeout(()=>document.getElementById('task-name').focus(),400);
+  if(editingTaskId) btns.innerHTML+=`<button class="btn btn-danger btn-sm" style="width:auto;margin-left:8px;" onclick="confirmDeleteTask()"><i class="fas fa-trash-can"></i></button>`;
+  openSheet('task-sheet'); setTimeout(()=>document.getElementById('task-name').focus(),400);
 }
-function setPriority(p){
-  taskPriority=p;
-  document.querySelectorAll('.priority-chip-h,.priority-chip-m,.priority-chip-l').forEach(c=>c.classList.remove('sel'));
-  const pc=document.querySelector(`.priority-chip-${p==='high'?'h':p==='med'?'m':'l'}`);
-  if(pc)pc.classList.add('sel');
-}
-function setRepeat(r){
-  taskRepeat=r;
-  document.querySelectorAll('.repeat-opts .chip').forEach((c,i)=>{
-    const vals=['none','daily','weekly','monthly','custom'];
-    c.classList.toggle('sel',vals[i]===r);
-  });
-  document.getElementById('repeat-custom').style.display=r==='custom'?'block':'none';
-}
-function toggleDeadline(){
-  taskDeadline=!taskDeadline;
-  document.getElementById('deadline-toggle').classList.toggle('on',taskDeadline);
-  document.getElementById('deadline-sec').style.display=taskDeadline?'block':'none';
-}
-function selectCat(id){
-  selectedCatId=id;
-  const cat=DB.categories.find(c=>c.id===id);
-  document.querySelectorAll('#cat-chips .chip').forEach(c=>c.classList.remove('sel'));
-  document.querySelectorAll('#cat-chips .chip').forEach((c,i)=>{
-    const cid=DB.categories[i]?.id;
-    if(cid===id){c.classList.add('sel');c.style.background=cat?.color||'var(--accent)';c.style.color='#fff';c.style.borderColor='transparent';}
-    else{c.style.background='';c.style.color='';c.style.borderColor='';}
-  });
-}
-function toggleTag(t){
-  if(selectedTags.includes(t))selectedTags=selectedTags.filter(x=>x!==t);
-  else selectedTags.push(t);
-  document.querySelectorAll('#tag-chips .chip').forEach(c=>{
-    const tname=c.textContent.trim();
-    const on=selectedTags.includes(tname);
-    c.classList.toggle('sel',on);
-    c.style.background=on?'var(--accent)':'';
-    c.style.color=on?'#fff':'';
-    c.style.borderColor=on?'transparent':'';
-  });
-}
+
+function setPriority(p){taskPriority=p;document.querySelectorAll('.priority-chip-h,.priority-chip-m,.priority-chip-l').forEach(c=>c.classList.remove('sel'));const pc=document.querySelector(`.priority-chip-${p==='high'?'h':p==='med'?'m':'l'}`);if(pc)pc.classList.add('sel');}
+function setRepeat(r){taskRepeat=r;document.querySelectorAll('.repeat-opts .chip').forEach((c,i)=>{const vals=['none','daily','weekly','monthly','custom'];c.classList.toggle('sel',vals[i]===r);});document.getElementById('repeat-custom').style.display=r==='custom'?'block':'none';}
+function toggleDeadline(){taskDeadline=!taskDeadline;document.getElementById('deadline-toggle').classList.toggle('on',taskDeadline);document.getElementById('deadline-sec').style.display=taskDeadline?'block':'none';}
+function selectCat(id){selectedCatId=id;const cat=DB.categories.find(c=>c.id===id);document.querySelectorAll('#cat-chips .chip').forEach(c=>c.classList.remove('sel'));document.querySelectorAll('#cat-chips .chip').forEach((c,i)=>{const cid=DB.categories[i]?.id;if(cid===id){c.classList.add('sel');c.style.background=cat?.color||'var(--accent)';c.style.color='#fff';c.style.borderColor='transparent';}else{c.style.background='';c.style.color='';c.style.borderColor='';}});}
+function toggleTag(t){if(selectedTags.includes(t))selectedTags=selectedTags.filter(x=>x!==t);else selectedTags.push(t);document.querySelectorAll('#tag-chips .chip').forEach(c=>{const tname=c.textContent.trim();const on=selectedTags.includes(tname);c.classList.toggle('sel',on);c.style.background=on?'var(--accent)':'';c.style.color=on?'#fff':'';c.style.borderColor=on?'transparent':'';});}
+
 async function saveTask(){
   const name=document.getElementById('task-name').value.trim();
   if(!name){showToast('⚠️ Task name is required');return;}
   const date=document.getElementById('task-date').value||todayStr();
   const time=document.getElementById('task-time').value||'';
   const notes=document.getElementById('task-notes').value.trim();
-  const repeat=taskRepeat;
-  const repeatInterval=parseInt(document.getElementById('repeat-interval').value)||1;
-  const repeatUnit=document.getElementById('repeat-unit').value||'days';
-  const deadlineStart=taskDeadline?document.getElementById('dl-start').value:'';
-  const deadlineEnd=taskDeadline?document.getElementById('dl-end').value:'';
+  const repeat=taskRepeat; const repeatInterval=parseInt(document.getElementById('repeat-interval').value)||1; const repeatUnit=document.getElementById('repeat-unit').value||'days';
+  const deadlineStart=taskDeadline?document.getElementById('dl-start').value:''; const deadlineEnd=taskDeadline?document.getElementById('dl-end').value:'';
 
   if(editingTaskId){
     const task=DB.tasks.find(t=>t.id===editingTaskId);
@@ -1180,115 +966,37 @@ async function saveTask(){
     showToast('✅ Task saved');
   }
   save();closeSheet('task-sheet');updateInboxDot();
-  if(currentTab==='today')renderToday();
-  else if(currentTab==='cats')renderCategories();
+  if(currentTab==='today')renderToday(); else if(currentTab==='cats')renderCategories();
 }
-async function confirmDeleteTask(){
-  if(!editingTaskId)return;
-  await cancelTaskNotifs(editingTaskId);
-  DB.tasks=DB.tasks.filter(t=>t.id!==editingTaskId);
-  save();closeSheet('task-sheet');showToast('🗑️ Task deleted');updateInboxDot();
-  if(currentTab==='today')renderToday();
-  else if(currentTab==='cats')renderCategories();
-}
+async function confirmDeleteTask(){if(!editingTaskId)return;await cancelTaskNotifs(editingTaskId);DB.tasks=DB.tasks.filter(t=>t.id!==editingTaskId);save();closeSheet('task-sheet');showToast('🗑️ Task deleted');updateInboxDot();if(currentTab==='today')renderToday();else if(currentTab==='cats')renderCategories();}
 
-// ════════════════════════════════════════════════════════════
-//   CATEGORY SHEET
-// ════════════════════════════════════════════════════════════
-function openCatSheet(){
-  catColor='#3b82f6';catIcon='fa-folder';
-  document.getElementById('cat-name-inp').value='';
-  document.getElementById('cat-color-row').innerHTML=CAT_COLORS.map(c=>`<div class="color-swatch${c===catColor?' sel':''}" style="background:${c};" onclick="selectCatColor('${c}')"></div>`).join('');
-  document.getElementById('cat-icon-row').innerHTML=CAT_ICONS.map(ic=>`<div class="icon-picker${ic===catIcon?' sel':''}" style="${ic===catIcon?`background:${catColor};color:#fff;border-color:${catColor};`:''}" onclick="selectCatIcon('${ic}')"><i class="fas ${ic}"></i></div>`).join('');
-  openSheet('cat-sheet');
-  setTimeout(()=>document.getElementById('cat-name-inp').focus(),400);
-}
-function selectCatColor(c){
-  catColor=c;
-  document.querySelectorAll('#cat-color-row .color-swatch').forEach(el=>el.classList.remove('sel'));
-  document.querySelectorAll('#cat-color-row .color-swatch').forEach(el=>{if(el.style.background===c||el.style.backgroundColor===c)el.classList.add('sel');});
-  document.querySelectorAll('#cat-icon-row .icon-picker').forEach(el=>{
-    if(el.classList.contains('sel')){el.style.background=c;el.style.borderColor=c;}
-  });
-}
-function selectCatIcon(ic){
-  catIcon=ic;
-  document.querySelectorAll('#cat-icon-row .icon-picker').forEach(el=>{el.classList.remove('sel');el.style.background='';el.style.color='';el.style.borderColor='';});
-  const el=document.getElementById(`ci-${ic}`);
-  // Find by content
-  document.querySelectorAll('#cat-icon-row .icon-picker').forEach(el=>{
-    if(el.querySelector(`.fa-${ic.replace('fa-','')}`)){el.classList.add('sel');el.style.background=catColor;el.style.color='#fff';el.style.borderColor=catColor;}
-  });
-}
-function saveCat(){
-  const name=document.getElementById('cat-name-inp').value.trim();
-  if(!name){showToast('⚠️ Category name required');return;}
-  DB.categories.push({id:uid(),name,color:catColor,icon:catIcon});
-  save();closeSheet('cat-sheet');renderCategories();showToast('📁 Category created');
-}
+function openCatSheet(){catColor='#3b82f6';catIcon='fa-folder';document.getElementById('cat-name-inp').value='';document.getElementById('cat-color-row').innerHTML=CAT_COLORS.map(c=>`<div class="color-swatch${c===catColor?' sel':''}" style="background:${c};" onclick="selectCatColor('${c}')"></div>`).join('');document.getElementById('cat-icon-row').innerHTML=CAT_ICONS.map(ic=>`<div class="icon-picker${ic===catIcon?' sel':''}" style="${ic===catIcon?`background:${catColor};color:#fff;border-color:${catColor};`:''}" onclick="selectCatIcon('${ic}')"><i class="fas ${ic}"></i></div>`).join('');openSheet('cat-sheet');setTimeout(()=>document.getElementById('cat-name-inp').focus(),400);}
+function selectCatColor(c){catColor=c;document.querySelectorAll('#cat-color-row .color-swatch').forEach(el=>el.classList.remove('sel'));document.querySelectorAll('#cat-color-row .color-swatch').forEach(el=>{if(el.style.background===c||el.style.backgroundColor===c)el.classList.add('sel');});document.querySelectorAll('#cat-icon-row .icon-picker').forEach(el=>{if(el.classList.contains('sel')){el.style.background=c;el.style.borderColor=c;}});}
+function selectCatIcon(ic){catIcon=ic;document.querySelectorAll('#cat-icon-row .icon-picker').forEach(el=>{el.classList.remove('sel');el.style.background='';el.style.color='';el.style.borderColor='';});document.querySelectorAll('#cat-icon-row .icon-picker').forEach(el=>{if(el.querySelector(`.fa-${ic.replace('fa-','')}`)){el.classList.add('sel');el.style.background=catColor;el.style.color='#fff';el.style.borderColor=catColor;}});}
+function saveCat(){const name=document.getElementById('cat-name-inp').value.trim();if(!name){showToast('⚠️ Category name required');return;}DB.categories.push({id:uid(),name,color:catColor,icon:catIcon});save();closeSheet('cat-sheet');renderCategories();showToast('📁 Category created');}
 
-// ════════════════════════════════════════════════════════════
-//   SETTINGS
-// ════════════════════════════════════════════════════════════
-function openSettings(){
-  applyTheme();
-  openSheet('settings-sheet');
-}
-function clearCompleted(){
-  const n=DB.tasks.filter(t=>t.completed).length;
-  if(n===0){showToast('No completed tasks to clear');return;}
-  if(!confirm(`Delete ${n} completed task(s)?`))return;
-  DB.tasks=DB.tasks.filter(t=>!t.completed);
-  save();showToast(`🗑️ Cleared ${n} tasks`);closeSheet('settings-sheet');
-  if(currentTab==='today')renderToday();
-  else if(currentTab==='cats')renderCategories();
-}
+function openSettings(){applyTheme();openSheet('settings-sheet');}
+function clearCompleted(){const n=DB.tasks.filter(t=>t.completed).length;if(n===0){showToast('No completed tasks to clear');return;}if(!confirm(`Delete ${n} completed task(s)?`))return;DB.tasks=DB.tasks.filter(t=>!t.completed);save();showToast(`🗑️ Cleared ${n} tasks`);closeSheet('settings-sheet');if(currentTab==='today')renderToday();else if(currentTab==='cats')renderCategories();}
 
-// ════════════════════════════════════════════════════════════
-//   NOTIFICATION LOG SHEET
-// ════════════════════════════════════════════════════════════
 function openNotifLog(){
-  const today=todayStr();
-  const todayTasks=DB.tasks.filter(t=>t.date===today&&!t.completed&&t.time);
-  const now=new Date();
-  const doneTasks=DB.tasks.filter(t=>t.date===today&&t.completed).length;
+  const today=todayStr();const todayTasks=DB.tasks.filter(t=>t.date===today&&!t.completed&&t.time);
   let html=`
     <div style="margin-bottom:16px;">
       <div style="font-size:13px;color:var(--text-sec);margin-bottom:12px;">Active notification channels:</div>
-      <div class="cal-notif-item">
-        <div class="notif-type-icon" style="background:rgba(75,140,247,0.15);color:var(--accent);"><i class="fas fa-bell"></i></div>
-        <div><div style="font-size:14px;font-weight:600;">Task Reminders</div><div style="font-size:12px;color:var(--text-mut);">At task time + 30 min before</div></div>
-      </div>
-      <div class="cal-notif-item">
-        <div class="notif-type-icon" style="background:rgba(251,191,36,0.15);color:var(--warning);"><i class="fas fa-sun"></i></div>
-        <div><div style="font-size:14px;font-weight:600;">Morning Summary</div><div style="font-size:12px;color:var(--text-mut);">Every day at 7:00 AM</div></div>
-      </div>
-      <div class="cal-notif-item">
-        <div class="notif-type-icon" style="background:rgba(139,92,246,0.15);color:#8b5cf6;"><i class="fas fa-moon"></i></div>
-        <div><div style="font-size:14px;font-weight:600;">Evening Summary</div><div style="font-size:12px;color:var(--text-mut);">Every day at 10:00 PM</div></div>
-      </div>
-      <div class="cal-notif-item" style="border:none;">
-        <div class="notif-type-icon" style="background:rgba(52,211,153,0.15);color:var(--success);"><i class="fas fa-rotate"></i></div>
-        <div><div style="font-size:14px;font-weight:600;">Auto Roll-over</div><div style="font-size:12px;color:var(--text-mut);">Incomplete tasks moved to today at midnight</div></div>
-      </div>
+      <div class="cal-notif-item"><div class="notif-type-icon" style="background:rgba(75,140,247,0.15);color:var(--accent);"><i class="fas fa-bell"></i></div><div><div style="font-size:14px;font-weight:600;">Task Reminders</div><div style="font-size:12px;color:var(--text-mut);">At task time + 30 min before</div></div></div>
+      <div class="cal-notif-item"><div class="notif-type-icon" style="background:rgba(251,191,36,0.15);color:var(--warning);"><i class="fas fa-sun"></i></div><div><div style="font-size:14px;font-weight:600;">Morning Summary</div><div style="font-size:12px;color:var(--text-mut);">Every day at 7:00 AM</div></div></div>
+      <div class="cal-notif-item"><div class="notif-type-icon" style="background:rgba(139,92,246,0.15);color:#8b5cf6;"><i class="fas fa-moon"></i></div><div><div style="font-size:14px;font-weight:600;">Evening Summary</div><div style="font-size:12px;color:var(--text-mut);">Every day at 10:00 PM</div></div></div>
     </div>
     <div style="background:var(--bg-card);border-radius:14px;padding:14px;border:1px solid var(--border);">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;">Today's Schedule</div>
-      ${todayTasks.length===0
-        ?`<div style="font-size:13px;color:var(--text-mut);">No timed tasks for today.</div>`
-        :todayTasks.sort((a,b)=>a.time.localeCompare(b.time)).map(t=>`
-          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
-            <span style="font-size:12px;font-weight:700;color:var(--accent);min-width:60px;">${fmtTime(t.time)}</span>
-            <span style="font-size:13px;color:var(--text);">${t.name}</span>
-          </div>`).join('')
-      }
+      ${todayTasks.length===0?`<div style="font-size:13px;color:var(--text-mut);">No timed tasks for today.</div>`:todayTasks.sort((a,b)=>a.time.localeCompare(b.time)).map(t=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);"><span style="font-size:12px;font-weight:700;color:var(--accent);min-width:60px;">${fmtTime(t.time)}</span><span style="font-size:13px;color:var(--text);">${t.name}</span></div>`).join('')}
     </div>`;
   document.getElementById('notif-body').innerHTML=html;
   openSheet('notif-sheet');
 }
 
 // ════════════════════════════════════════════════════════════
-//   NOTIFICATIONS - CAPACITOR LOCAL NOTIFICATIONS
+//   UPDATED NATIVE PUSH NOTIFICATIONS 
 // ════════════════════════════════════════════════════════════
 function getLN(){
   try{
@@ -1301,18 +1009,19 @@ function getLN(){
 async function initNotifChannels(){
   const LN=getLN();if(!LN)return;
   try{
-    const perm=await LN.requestPermissions();
-    if(perm.display!=='granted'){showToast('⚠️ Enable notifications in Settings for reminders');return;}
-    await LN.createChannel({id:'task_reminders',name:'Task Reminders',description:'At-time and 30-min-before reminders',importance:5,visibility:1,sound:'default',vibration:true,lights:true,lightColor:'#4b8cf7'});
-    await LN.createChannel({id:'urgent_tasks',  name:'Urgent Tasks',   description:'High-priority task alerts',       importance:5,visibility:1,sound:'default',vibration:true,lights:true,lightColor:'#f87171'});
-    await LN.createChannel({id:'daily_summaries',name:'Daily Summaries',description:'7AM and 10PM daily summaries',   importance:4,visibility:1,sound:'default',vibration:true});
-    await LN.createChannel({id:'rollover',       name:'Roll-over',      description:'Incomplete task roll-over info', importance:3,visibility:0,sound:null,vibration:false});
-    // Tap listener — open Today tab
+    // Make absolutely sure we ask the device for native permission
+    const perm = await LN.requestPermissions();
+    if(perm.display !== 'granted'){ showToast('⚠️ Enable notifications in device Settings'); return; }
+    
+    await LN.createChannel({id:'task_reminders',name:'Task Reminders',description:'Task reminders',importance:5,visibility:1,sound:'default',vibration:true});
+    await LN.createChannel({id:'urgent_tasks',name:'Urgent Tasks',description:'High-priority task alerts',importance:5,visibility:1,sound:'default',vibration:true,lightColor:'#f87171'});
+    await LN.createChannel({id:'daily_summaries',name:'Daily Summaries',description:'Daily updates',importance:4,visibility:1,sound:'default',vibration:true});
+    
     if(LN.addListener){
-      LN.addListener('localNotificationActionPerformed',()=>{switchTab('today');});
+      LN.addListener('localNotificationActionPerformed', () => { switchTab('today'); });
     }
-    console.log('[Notif] Channels created');
-  }catch(e){console.warn('[Notif] initChannels:',e);}
+    console.log('[Native Notif] Channels successfully registered');
+  }catch(e){console.warn('[Native Notif] Channel Init Error:',e);}
 }
 
 async function cancelTaskNotifs(taskId){
@@ -1328,132 +1037,109 @@ async function scheduleTaskReminders(task){
   const taskDT=new Date(`${task.date}T${task.time}`);
   const now=new Date();
   if(taskDT<=now)return;
+  
   const LN=getLN();
   if(!LN){
-    // Web fallback - setTimeout in-app notification
-    const diff=taskDT-now;
-    const diff30=diff-30*60000;
-    if(diff30>0)setTimeout(()=>showInAppNotif('Coming Up',`"${task.name}" starts in 30 minutes`,'clock'),diff30);
+    // Fallback if built wrong or accessed via web browser
+    const diff=taskDT-now; const diff30=diff-30*60000;
+    if(diff30>0)setTimeout(()=>showInAppNotif('Coming Up',`"${task.name}" starts in 30 mins`,'clock'),diff30);
     if(diff>0)setTimeout(()=>showInAppNotif('Task Now',`"${task.name}" is scheduled now`,'bell'),diff);
     return;
   }
+  
   try{
     const base=Math.abs(hashCode(task.id))%1000000000;
     const notifs=[];
     const warn30=new Date(taskDT.getTime()-30*60000);
+    
+    // Notice: Removed 'smallIcon' attribute so it safely defaults to the app icon and won't crash
     if(warn30>now){
       notifs.push({
-        id:base+1,
-        title:'⏰ Coming Up — 30 Minutes',
-        body:`"${task.name}" starts in 30 minutes`,
-        schedule:{at:warn30,allowWhileIdle:true},
-        channelId:'task_reminders',
-        smallIcon:'ic_stat_notification',
-        sound:'default'
+        id:base+1, title:'⏰ Coming Up — 30 Minutes', body:`"${task.name}" starts in 30 minutes`,
+        schedule:{at:warn30,allowWhileIdle:true}, channelId:'task_reminders', sound:'default'
       });
     }
     notifs.push({
-      id:base+2,
-      title:task.priority==='high'?'🚨 Urgent Task Now':'🔔 Task Now',
-      body:`"${task.name}" is scheduled for ${fmtTime(task.time)}`,
-      schedule:{at:taskDT,allowWhileIdle:true},
-      channelId:task.priority==='high'?'urgent_tasks':'task_reminders',
-      smallIcon:'ic_stat_notification',
-      sound:'default'
+      id:base+2, title:task.priority==='high'?'🚨 Urgent Task Now':'🔔 Task Now', body:`"${task.name}" is scheduled for ${fmtTime(task.time)}`,
+      schedule:{at:taskDT,allowWhileIdle:true}, channelId:task.priority==='high'?'urgent_tasks':'task_reminders', sound:'default'
     });
+    
     await LN.schedule({notifications:notifs});
-  }catch(e){console.warn('[Notif] schedule task:',e);}
+    console.log('[Native Notif] Scheduled:', task.name);
+  }catch(e){console.warn('[Native Notif] schedule error:',e);}
 }
 
 function fmtTasksForNotif(tasks,limit=5){
-  return tasks.sort((a,b)=>{if(!a.time)return 1;if(!b.time)return -1;return a.time.localeCompare(b.time);})
-    .slice(0,limit).map(t=>`• ${t.time?fmtTime(t.time)+' — ':''}${t.name}`).join('\n')
-    +(tasks.length>limit?`\n…and ${tasks.length-limit} more`:'');
+  return tasks.sort((a,b)=>{if(!a.time)return 1;if(!b.time)return -1;return a.time.localeCompare(b.time);}).slice(0,limit).map(t=>`• ${t.time?fmtTime(t.time)+' — ':''}${t.name}`).join('\n')+(tasks.length>limit?`\n…and ${tasks.length-limit} more`:'');
 }
 
 async function scheduleDailySummaries(){
   const LN=getLN();if(!LN)return;
   try{
-    // Cancel existing summaries
     await LN.cancel({notifications:[{id:90000001},{id:90000002},{id:90000003},{id:90000004}]});
-    const now=new Date();
-    const today=todayStr();
-    const t7=new Date(`${today}T07:00:00`);
-    const t22=new Date(`${today}T22:00:00`);
+    const now=new Date(); const today=todayStr();
+    const t7=new Date(`${today}T07:00:00`); const t22=new Date(`${today}T22:00:00`);
     const tomorrow=new Date(now);tomorrow.setDate(tomorrow.getDate()+1);
     const tom=`${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,'0')}-${String(tomorrow.getDate()).padStart(2,'0')}`;
     const notifs=[];
 
     if(now<t7){
-      // Schedule today's 7AM + 10PM
       const todayTasksList=DB.tasks.filter(t=>t.date===today);
-      const morningBody=todayTasksList.length===0
-        ?'No tasks scheduled today. Enjoy a productive day, Doctor!'
-        :`Today's tasks (${todayTasksList.length}):\n${fmtTasksForNotif(todayTasksList)}`;
-      notifs.push({id:90000001,title:'☀️ Good Morning, Doctor Micky!',body:morningBody,schedule:{at:t7,allowWhileIdle:true},channelId:'daily_summaries',smallIcon:'ic_stat_notification',sound:'default'});
-
-      const done=DB.tasks.filter(t=>t.date===today&&t.completed);
-      const pending=DB.tasks.filter(t=>t.date===today&&!t.completed);
+      const morningBody=todayTasksList.length===0?'No tasks scheduled today. Enjoy a productive day, Doctor!':`Today's tasks (${todayTasksList.length}):\n${fmtTasksForNotif(todayTasksList)}`;
+      notifs.push({id:90000001,title:'☀️ Good Morning, Doctor Micky!',body:morningBody,schedule:{at:t7,allowWhileIdle:true},channelId:'daily_summaries',sound:'default'});
+      
+      const done=DB.tasks.filter(t=>t.date===today&&t.completed); const pending=DB.tasks.filter(t=>t.date===today&&!t.completed);
       const eveningBody=`Done: ${done.length} ✅  Pending: ${pending.length} 📋\n${done.length?fmtTasksForNotif(done,3):''}${pending.length?'\n\nStill pending:\n'+fmtTasksForNotif(pending,3):''}`;
-      notifs.push({id:90000002,title:'🌙 Good Evening, Doctor Micky!',body:eveningBody.trim(),schedule:{at:t22,allowWhileIdle:true},channelId:'daily_summaries',smallIcon:'ic_stat_notification',sound:'default'});
+      notifs.push({id:90000002,title:'🌙 Good Evening, Doctor Micky!',body:eveningBody.trim(),schedule:{at:t22,allowWhileIdle:true},channelId:'daily_summaries',sound:'default'});
     } else if(now<t22){
-      // Already past 7AM — schedule today's 10PM + tomorrow's 7AM
-      const done=DB.tasks.filter(t=>t.date===today&&t.completed);
-      const pending=DB.tasks.filter(t=>t.date===today&&!t.completed);
+      const done=DB.tasks.filter(t=>t.date===today&&t.completed); const pending=DB.tasks.filter(t=>t.date===today&&!t.completed);
       const eveningBody=`Done: ${done.length} ✅  Pending: ${pending.length} 📋\n${done.length?fmtTasksForNotif(done,3):''}${pending.length?'\n\nStill pending:\n'+fmtTasksForNotif(pending,3):''}`;
-      notifs.push({id:90000002,title:'🌙 Good Evening, Doctor Micky!',body:eveningBody.trim(),schedule:{at:t22,allowWhileIdle:true},channelId:'daily_summaries',smallIcon:'ic_stat_notification',sound:'default'});
-
+      notifs.push({id:90000002,title:'🌙 Good Evening, Doctor Micky!',body:eveningBody.trim(),schedule:{at:t22,allowWhileIdle:true},channelId:'daily_summaries',sound:'default'});
+      
       const tomTasks=DB.tasks.filter(t=>t.date===tom);
-      const tomMorningBody=tomTasks.length===0?'No tasks scheduled for tomorrow yet.':
-        `Tomorrow's tasks (${tomTasks.length}):\n${fmtTasksForNotif(tomTasks)}`;
-      notifs.push({id:90000003,title:'☀️ Good Morning, Doctor Micky!',body:tomMorningBody,schedule:{at:new Date(`${tom}T07:00:00`),allowWhileIdle:true},channelId:'daily_summaries',smallIcon:'ic_stat_notification',sound:'default'});
+      const tomMorningBody=tomTasks.length===0?'No tasks scheduled for tomorrow yet.':`Tomorrow's tasks (${tomTasks.length}):\n${fmtTasksForNotif(tomTasks)}`;
+      notifs.push({id:90000003,title:'☀️ Good Morning, Doctor Micky!',body:tomMorningBody,schedule:{at:new Date(`${tom}T07:00:00`),allowWhileIdle:true},channelId:'daily_summaries',sound:'default'});
     } else {
-      // Past 10PM — schedule tomorrow's 7AM + 10PM
       const tomTasks=DB.tasks.filter(t=>t.date===tom);
-      const tomMorningBody=tomTasks.length===0?'No tasks scheduled for tomorrow yet.':
-        `Tomorrow's tasks (${tomTasks.length}):\n${fmtTasksForNotif(tomTasks)}`;
-      notifs.push({id:90000003,title:'☀️ Good Morning, Doctor Micky!',body:tomMorningBody,schedule:{at:new Date(`${tom}T07:00:00`),allowWhileIdle:true},channelId:'daily_summaries',smallIcon:'ic_stat_notification',sound:'default'});
-      const tomDone=DB.tasks.filter(t=>t.date===tom&&t.completed);
-      const tomPend=DB.tasks.filter(t=>t.date===tom&&!t.completed);
+      const tomMorningBody=tomTasks.length===0?'No tasks scheduled for tomorrow yet.':`Tomorrow's tasks (${tomTasks.length}):\n${fmtTasksForNotif(tomTasks)}`;
+      notifs.push({id:90000003,title:'☀️ Good Morning, Doctor Micky!',body:tomMorningBody,schedule:{at:new Date(`${tom}T07:00:00`),allowWhileIdle:true},channelId:'daily_summaries',sound:'default'});
+      const tomDone=DB.tasks.filter(t=>t.date===tom&&t.completed); const tomPend=DB.tasks.filter(t=>t.date===tom&&!t.completed);
       const tomEvBody=`Done: ${tomDone.length} ✅  Pending: ${tomPend.length} 📋`;
-      notifs.push({id:90000004,title:'🌙 Good Evening, Doctor Micky!',body:tomEvBody,schedule:{at:new Date(`${tom}T22:00:00`),allowWhileIdle:true},channelId:'daily_summaries',smallIcon:'ic_stat_notification',sound:'default'});
+      notifs.push({id:90000004,title:'🌙 Good Evening, Doctor Micky!',body:tomEvBody,schedule:{at:new Date(`${tom}T22:00:00`),allowWhileIdle:true},channelId:'daily_summaries',sound:'default'});
     }
     if(notifs.length)await LN.schedule({notifications:notifs});
-    console.log('[Notif] Daily summaries scheduled:',notifs.length);
-  }catch(e){console.warn('[Notif] daily summaries:',e);}
+  }catch(e){}
 }
 
 async function testNotification(){
   const LN=getLN();
   if(LN){
     try{
+      await LN.requestPermissions(); // Ask permission right before test
       await LN.schedule({notifications:[{
-        id:99999999,title:'🔔 Test Notification',
-        body:'MICKY Schedule notifications are working! Sound + vibration active.',
+        id:99999999,title:'🔔 Native Push Success!',
+        body:'Your device is natively receiving push notifications.',
         schedule:{at:new Date(Date.now()+3000),allowWhileIdle:true},
-        channelId:'task_reminders',smallIcon:'ic_stat_notification',sound:'default'
+        channelId:'task_reminders',sound:'default'
       }]});
-      showToast('Test notification in 3 seconds!');
-    }catch(e){showToast('Test failed: '+e.message);}
+      showToast('Close the app! Notification arriving in 3 seconds');
+    }catch(e){showToast('Native Push Error: '+e.message);}
   } else {
-    setTimeout(()=>showInAppNotif('Test Notification','MICKY Schedule is working!','check'),1000);
-    showToast('In-app test notification in 1 second');
+    setTimeout(()=>showInAppNotif('Test Notification','This is just an IN-APP fallback. Real native Push requires Capacitor builds.','check'),1000);
+    showToast('Falling back to in-app notification');
   }
   closeSheet('settings-sheet');
 }
 
 // ════════════════════════════════════════════════════════════
-//   AUTO ROLLOVER (incomplete tasks → today)
+//   AUTO ROLLOVER 
 // ════════════════════════════════════════════════════════════
 async function rolloverIncompleteTasks(){
-  const today=todayStr();
-  let changed=false;
+  const today=todayStr(); let changed=false;
   for(const task of DB.tasks){
     if(task.date&&task.date<today&&!task.completed){
       await cancelTaskNotifs(task.id).catch(()=>{});
-      task.date=today;
-      task.lastRollover=today;
-      changed=true;
+      task.date=today; task.lastRollover=today; changed=true;
       scheduleTaskReminders(task).catch(()=>{});
     }
   }
@@ -1462,13 +1148,11 @@ async function rolloverIncompleteTasks(){
 }
 
 function scheduleMidnightRollover(){
-  const now=new Date();
-  const midnight=new Date(now);midnight.setHours(24,0,1,0);
+  const now=new Date(); const midnight=new Date(now);midnight.setHours(24,0,1,0);
   setTimeout(async()=>{
     const rolled=await rolloverIncompleteTasks();
     if(rolled)showToast('🔄 Incomplete tasks moved to today');
-    await scheduleDailySummaries();
-    scheduleMidnightRollover();
+    await scheduleDailySummaries(); scheduleMidnightRollover();
   },midnight-now);
 }
 
@@ -1477,37 +1161,23 @@ function scheduleMidnightRollover(){
 // ════════════════════════════════════════════════════════════
 async function init(){
   try{
-    load();
-    applyTheme();
-    updateInboxDot();
-    // Screens default display
+    load(); applyTheme(); updateInboxDot();
     document.getElementById('screen-stats').style.display='none';
     renderToday();
-    // Run rollover (catches tasks that went past while app was closed)
     await rolloverIncompleteTasks();
-    // Init notifications + channels
     await initNotifChannels();
     await scheduleDailySummaries();
     scheduleMidnightRollover();
-    // Register Capacitor app state listeners
+    
     if(window.Capacitor?.Plugins?.App){
       window.Capacitor.Plugins.App.addListener('appStateChange',async ({isActive})=>{
-        if(isActive){
-          await rolloverIncompleteTasks();
-          await scheduleDailySummaries();
-        }
+        if(isActive){ await rolloverIncompleteTasks(); await scheduleDailySummaries(); }
       });
     }
-    console.log('[MICKY] App initialized');
-  }catch(e){
-    console.error('[MICKY] Init error:',e);
-    try{renderToday();}catch(e2){}
-  }
+  }catch(e){ try{renderToday();}catch(e2){} }
 }
 
 window.addEventListener('DOMContentLoaded',init);
-window.addEventListener('resize',()=>{});
-// Prevent pinch zoom
 document.addEventListener('touchend',e=>{const n=Date.now();if(n-(window._lastTap||0)<300)e.preventDefault();window._lastTap=n;},{passive:false});
 </script>
 
