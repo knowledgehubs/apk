@@ -996,8 +996,10 @@ function openNotifLog(){
 }
 
 // ════════════════════════════════════════════════════════════
-//   UPDATED NATIVE PUSH NOTIFICATIONS 
+//   UPDATED NATIVE PUSH NOTIFICATIONS — NotificationManager v2
 // ════════════════════════════════════════════════════════════
+
+// ── Internal helpers ──────────────────────────────────────
 function getLN(){
   try{
     if(window.Capacitor?.Plugins?.LocalNotifications) return window.Capacitor.Plugins.LocalNotifications;
@@ -1006,129 +1008,313 @@ function getLN(){
   return null;
 }
 
-async function initNotifChannels(){
-  const LN=getLN();if(!LN)return;
-  try{
-    // Make absolutely sure we ask the device for native permission
-    const perm = await LN.requestPermissions();
-    if(perm.display !== 'granted'){ showToast('⚠️ Enable notifications in device Settings'); return; }
-    
-    await LN.createChannel({id:'task_reminders',name:'Task Reminders',description:'Task reminders',importance:5,visibility:1,sound:'default',vibration:true});
-    await LN.createChannel({id:'urgent_tasks',name:'Urgent Tasks',description:'High-priority task alerts',importance:5,visibility:1,sound:'default',vibration:true,lightColor:'#f87171'});
-    await LN.createChannel({id:'daily_summaries',name:'Daily Summaries',description:'Daily updates',importance:4,visibility:1,sound:'default',vibration:true});
-    
-    if(LN.addListener){
-      LN.addListener('localNotificationActionPerformed', () => { switchTab('today'); });
+function fmtTasksForNotif(tasks,limit=5){
+  return tasks
+    .sort((a,b)=>{if(!a.time)return 1;if(!b.time)return -1;return a.time.localeCompare(b.time);})
+    .slice(0,limit)
+    .map(t=>`• ${t.time?fmtTime(t.time)+' — ':''}${t.name}`)
+    .join('\n')
+    +(tasks.length>limit?`\n…and ${tasks.length-limit} more`:'');
+}
+
+// ── NotificationManager ────────────────────────────────────
+// Wraps every schedule call with:
+//   • Permission gate (requestPermissions before first use)
+//   • localStorage-backed retry queue
+//   • Exponential backoff (1 s → 2 s → 4 s … capped at 64 s, 6 attempts)
+// All public notification functions route through NM.schedule() / NM.cancel()
+// ──────────────────────────────────────────────────────────
+window.NotificationManager = (() => {
+  const RETRY_KEY   = 'micky_notif_retry_queue';
+  const MAX_RETRIES = 6;
+  const BASE_DELAY  = 1000; // ms
+  let _permGranted  = false;
+  let _retryTimer   = null;
+
+  // ── Queue persistence ──────────────────────────────────
+  function _loadQueue(){
+    try{ return JSON.parse(localStorage.getItem(RETRY_KEY)||'[]'); }
+    catch(e){ return []; }
+  }
+  function _saveQueue(q){
+    try{ localStorage.setItem(RETRY_KEY, JSON.stringify(q)); }
+    catch(e){}
+  }
+  function _enqueue(payload, attempt){
+    const q = _loadQueue();
+    // Deduplicate: remove any existing entry with the same notification IDs
+    const incomingIds = (payload.notifications||[]).map(n=>n.id);
+    const filtered = q.filter(e => !e.payload.notifications.some(n=>incomingIds.includes(n.id)));
+    filtered.push({ payload, attempt: attempt||0, ts: Date.now() });
+    _saveQueue(filtered);
+  }
+  function _dequeue(ids){
+    const q = _loadQueue().filter(e => !e.payload.notifications.some(n=>ids.includes(n.id)));
+    _saveQueue(q);
+  }
+  function _clearQueue(){
+    _saveQueue([]);
+  }
+
+  // ── Permission gate ────────────────────────────────────
+  async function _ensurePermission(){
+    if(_permGranted) return true;
+    const LN = getLN();
+    if(!LN) return false;
+    try{
+      const res = await LN.requestPermissions();
+      _permGranted = (res.display === 'granted');
+      if(!_permGranted) showToast('⚠️ Enable notifications in device Settings');
+      return _permGranted;
+    }catch(e){
+      console.warn('[NM] requestPermissions failed:', e);
+      return false;
     }
-    console.log('[Native Notif] Channels successfully registered');
-  }catch(e){console.warn('[Native Notif] Channel Init Error:',e);}
+  }
+
+  // ── Core schedule (single attempt) ────────────────────
+  async function _doSchedule(payload){
+    const LN = getLN();
+    if(!LN) throw new Error('Capacitor LocalNotifications plugin not available');
+    await LN.schedule(payload);
+  }
+
+  // ── Retry loop ─────────────────────────────────────────
+  function _scheduleRetryFlush(){
+    if(_retryTimer) return;
+    _retryTimer = setTimeout(async ()=>{
+      _retryTimer = null;
+      const q = _loadQueue();
+      if(!q.length) return;
+      const ok = await _ensurePermission();
+      if(!ok){ _scheduleRetryFlush(); return; }
+      const remaining = [];
+      for(const entry of q){
+        const delay = BASE_DELAY * Math.pow(2, entry.attempt);
+        if(Date.now() - entry.ts < delay){ remaining.push(entry); continue; }
+        try{
+          await _doSchedule(entry.payload);
+          // Success — drop from queue
+          console.log('[NM] Retry succeeded for IDs:', entry.payload.notifications.map(n=>n.id));
+        }catch(e){
+          const next = entry.attempt + 1;
+          if(next < MAX_RETRIES){
+            remaining.push({ ...entry, attempt: next, ts: Date.now() });
+            console.warn(`[NM] Retry ${next}/${MAX_RETRIES} scheduled for IDs:`, entry.payload.notifications.map(n=>n.id));
+          } else {
+            console.error('[NM] Max retries exceeded for IDs:', entry.payload.notifications.map(n=>n.id));
+          }
+        }
+      }
+      _saveQueue(remaining);
+      if(remaining.length) _scheduleRetryFlush();
+    }, BASE_DELAY);
+  }
+
+  // ── Public: schedule ───────────────────────────────────
+  async function schedule(payload){
+    const LN = getLN();
+    if(!LN){
+      // Web fallback: fire in-app notifications via setTimeout
+      for(const n of (payload.notifications||[])){
+        const at = n.schedule?.at;
+        if(!at) continue;
+        const diff = new Date(at) - Date.now();
+        if(diff > 0) setTimeout(()=>showInAppNotif(n.title, n.body, 'bell'), diff);
+      }
+      return;
+    }
+    const ok = await _ensurePermission();
+    if(!ok){ _enqueue(payload, 0); _scheduleRetryFlush(); return; }
+    try{
+      await _doSchedule(payload);
+      // On success, clear any duplicate pending retries for these IDs
+      _dequeue((payload.notifications||[]).map(n=>n.id));
+    }catch(e){
+      console.warn('[NM] Initial schedule failed, queuing for retry:', e);
+      _enqueue(payload, 0);
+      _scheduleRetryFlush();
+    }
+  }
+
+  // ── Public: cancel ─────────────────────────────────────
+  async function cancel(payload){
+    const LN = getLN();
+    if(!LN) return;
+    // Remove any pending retries for cancelled IDs first
+    _dequeue((payload.notifications||[]).map(n=>n.id));
+    try{ await LN.cancel(payload); }
+    catch(e){ console.warn('[NM] cancel error (non-fatal):', e); }
+  }
+
+  // ── Public: init (channels + permission + listener) ───
+  async function init(){
+    const LN = getLN();
+    if(!LN){
+      console.log('[NM] Running on web — native channels skipped');
+      return;
+    }
+    const ok = await _ensurePermission();
+    if(!ok) return;
+    try{
+      // Android Notification Channels  (importance:5 = IMPORTANCE_HIGH)
+      await LN.createChannel({
+        id:'task_reminders', name:'Task Reminders',
+        description:'Reminders at task time and 30 min before',
+        importance:5, visibility:1, sound:'default',
+        vibration:true, lights:true
+      });
+      await LN.createChannel({
+        id:'urgent_tasks', name:'Urgent Tasks',
+        description:'High-priority task alerts',
+        importance:5, visibility:1, sound:'default',
+        vibration:true, lights:true, lightColor:'#f87171'
+      });
+      await LN.createChannel({
+        id:'daily_summaries', name:'Daily Summaries',
+        description:'Morning and evening daily overview',
+        importance:5, visibility:1, sound:'default',
+        vibration:true, lights:true
+      });
+      if(LN.addListener){
+        LN.addListener('localNotificationActionPerformed', ()=>{ switchTab('today'); });
+      }
+      console.log('[NM] Channels registered successfully');
+      // Flush any notifications that were queued before permission was granted
+      _scheduleRetryFlush();
+    }catch(e){
+      console.warn('[NM] Channel init error:', e);
+    }
+  }
+
+  return { schedule, cancel, init };
+})();
+
+// ── Public notification functions (all route through NM) ──
+
+async function initNotifChannels(){
+  await window.NotificationManager.init();
 }
 
 async function cancelTaskNotifs(taskId){
-  const LN=getLN();if(!LN)return;
-  try{
-    const base=Math.abs(hashCode(taskId))%1000000000;
-    await LN.cancel({notifications:[{id:base+1},{id:base+2}]});
-  }catch(e){}
+  const base = Math.abs(hashCode(taskId)) % 1000000000;
+  await window.NotificationManager.cancel({ notifications:[{id:base+1},{id:base+2}] });
 }
 
 async function scheduleTaskReminders(task){
-  if(!task.date||!task.time)return;
-  const taskDT=new Date(`${task.date}T${task.time}`);
-  const now=new Date();
-  if(taskDT<=now)return;
-  
-  const LN=getLN();
-  if(!LN){
-    // Fallback if built wrong or accessed via web browser
-    const diff=taskDT-now; const diff30=diff-30*60000;
-    if(diff30>0)setTimeout(()=>showInAppNotif('Coming Up',`"${task.name}" starts in 30 mins`,'clock'),diff30);
-    if(diff>0)setTimeout(()=>showInAppNotif('Task Now',`"${task.name}" is scheduled now`,'bell'),diff);
-    return;
-  }
-  
-  try{
-    const base=Math.abs(hashCode(task.id))%1000000000;
-    const notifs=[];
-    const warn30=new Date(taskDT.getTime()-30*60000);
-    
-    // Notice: Removed 'smallIcon' attribute so it safely defaults to the app icon and won't crash
-    if(warn30>now){
-      notifs.push({
-        id:base+1, title:'⏰ Coming Up — 30 Minutes', body:`"${task.name}" starts in 30 minutes`,
-        schedule:{at:warn30,allowWhileIdle:true}, channelId:'task_reminders', sound:'default'
-      });
-    }
-    notifs.push({
-      id:base+2, title:task.priority==='high'?'🚨 Urgent Task Now':'🔔 Task Now', body:`"${task.name}" is scheduled for ${fmtTime(task.time)}`,
-      schedule:{at:taskDT,allowWhileIdle:true}, channelId:task.priority==='high'?'urgent_tasks':'task_reminders', sound:'default'
-    });
-    
-    await LN.schedule({notifications:notifs});
-    console.log('[Native Notif] Scheduled:', task.name);
-  }catch(e){console.warn('[Native Notif] schedule error:',e);}
-}
+  if(!task.date||!task.time) return;
+  const taskDT = new Date(`${task.date}T${task.time}`);
+  const now    = new Date();
+  if(taskDT <= now) return;
 
-function fmtTasksForNotif(tasks,limit=5){
-  return tasks.sort((a,b)=>{if(!a.time)return 1;if(!b.time)return -1;return a.time.localeCompare(b.time);}).slice(0,limit).map(t=>`• ${t.time?fmtTime(t.time)+' — ':''}${t.name}`).join('\n')+(tasks.length>limit?`\n…and ${tasks.length-limit} more`:'');
+  const base   = Math.abs(hashCode(task.id)) % 1000000000;
+  const warn30 = new Date(taskDT.getTime() - 30*60000);
+  const notifs = [];
+
+  if(warn30 > now){
+    notifs.push({
+      id: base+1,
+      title: '⏰ Coming Up — 30 Minutes',
+      body: `"${task.name}" starts in 30 minutes`,
+      schedule: { at: warn30, allowWhileIdle: true },
+      channelId: 'task_reminders',
+      sound: 'default'
+    });
+  }
+  notifs.push({
+    id: base+2,
+    title: task.priority==='high' ? '🚨 Urgent Task Now' : '🔔 Task Now',
+    body: `"${task.name}" is scheduled for ${fmtTime(task.time)}`,
+    schedule: { at: taskDT, allowWhileIdle: true },
+    channelId: task.priority==='high' ? 'urgent_tasks' : 'task_reminders',
+    sound: 'default'
+  });
+
+  await window.NotificationManager.schedule({ notifications: notifs });
+  console.log('[NM] Queued reminders for:', task.name);
 }
 
 async function scheduleDailySummaries(){
-  const LN=getLN();if(!LN)return;
-  try{
-    await LN.cancel({notifications:[{id:90000001},{id:90000002},{id:90000003},{id:90000004}]});
-    const now=new Date(); const today=todayStr();
-    const t7=new Date(`${today}T07:00:00`); const t22=new Date(`${today}T22:00:00`);
-    const tomorrow=new Date(now);tomorrow.setDate(tomorrow.getDate()+1);
-    const tom=`${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,'0')}-${String(tomorrow.getDate()).padStart(2,'0')}`;
-    const notifs=[];
+  // Cancel any previously scheduled summary IDs
+  await window.NotificationManager.cancel({
+    notifications:[{id:90000001},{id:90000002},{id:90000003},{id:90000004}]
+  });
 
-    if(now<t7){
-      const todayTasksList=DB.tasks.filter(t=>t.date===today);
-      const morningBody=todayTasksList.length===0?'No tasks scheduled today. Enjoy a productive day, Doctor!':`Today's tasks (${todayTasksList.length}):\n${fmtTasksForNotif(todayTasksList)}`;
-      notifs.push({id:90000001,title:'☀️ Good Morning, Doctor Micky!',body:morningBody,schedule:{at:t7,allowWhileIdle:true},channelId:'daily_summaries',sound:'default'});
-      
-      const done=DB.tasks.filter(t=>t.date===today&&t.completed); const pending=DB.tasks.filter(t=>t.date===today&&!t.completed);
-      const eveningBody=`Done: ${done.length} ✅  Pending: ${pending.length} 📋\n${done.length?fmtTasksForNotif(done,3):''}${pending.length?'\n\nStill pending:\n'+fmtTasksForNotif(pending,3):''}`;
-      notifs.push({id:90000002,title:'🌙 Good Evening, Doctor Micky!',body:eveningBody.trim(),schedule:{at:t22,allowWhileIdle:true},channelId:'daily_summaries',sound:'default'});
-    } else if(now<t22){
-      const done=DB.tasks.filter(t=>t.date===today&&t.completed); const pending=DB.tasks.filter(t=>t.date===today&&!t.completed);
-      const eveningBody=`Done: ${done.length} ✅  Pending: ${pending.length} 📋\n${done.length?fmtTasksForNotif(done,3):''}${pending.length?'\n\nStill pending:\n'+fmtTasksForNotif(pending,3):''}`;
-      notifs.push({id:90000002,title:'🌙 Good Evening, Doctor Micky!',body:eveningBody.trim(),schedule:{at:t22,allowWhileIdle:true},channelId:'daily_summaries',sound:'default'});
-      
-      const tomTasks=DB.tasks.filter(t=>t.date===tom);
-      const tomMorningBody=tomTasks.length===0?'No tasks scheduled for tomorrow yet.':`Tomorrow's tasks (${tomTasks.length}):\n${fmtTasksForNotif(tomTasks)}`;
-      notifs.push({id:90000003,title:'☀️ Good Morning, Doctor Micky!',body:tomMorningBody,schedule:{at:new Date(`${tom}T07:00:00`),allowWhileIdle:true},channelId:'daily_summaries',sound:'default'});
-    } else {
-      const tomTasks=DB.tasks.filter(t=>t.date===tom);
-      const tomMorningBody=tomTasks.length===0?'No tasks scheduled for tomorrow yet.':`Tomorrow's tasks (${tomTasks.length}):\n${fmtTasksForNotif(tomTasks)}`;
-      notifs.push({id:90000003,title:'☀️ Good Morning, Doctor Micky!',body:tomMorningBody,schedule:{at:new Date(`${tom}T07:00:00`),allowWhileIdle:true},channelId:'daily_summaries',sound:'default'});
-      const tomDone=DB.tasks.filter(t=>t.date===tom&&t.completed); const tomPend=DB.tasks.filter(t=>t.date===tom&&!t.completed);
-      const tomEvBody=`Done: ${tomDone.length} ✅  Pending: ${tomPend.length} 📋`;
-      notifs.push({id:90000004,title:'🌙 Good Evening, Doctor Micky!',body:tomEvBody,schedule:{at:new Date(`${tom}T22:00:00`),allowWhileIdle:true},channelId:'daily_summaries',sound:'default'});
-    }
-    if(notifs.length)await LN.schedule({notifications:notifs});
-  }catch(e){}
+  const now    = new Date();
+  const today  = todayStr();
+  const t7     = new Date(`${today}T07:00:00`);
+  const t22    = new Date(`${today}T22:00:00`);
+  const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate()+1);
+  const tom    = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,'0')}-${String(tomorrow.getDate()).padStart(2,'0')}`;
+  const notifs = [];
+
+  if(now < t7){
+    const todayList = DB.tasks.filter(t=>t.date===today);
+    const morningBody = todayList.length===0
+      ? 'No tasks today. Enjoy a productive day, Doctor!'
+      : `Today's tasks (${todayList.length}):\n${fmtTasksForNotif(todayList)}`;
+    notifs.push({id:90000001, title:'☀️ Good Morning, Doctor Micky!', body:morningBody,
+      schedule:{at:t7,allowWhileIdle:true}, channelId:'daily_summaries', sound:'default'});
+
+    const done    = DB.tasks.filter(t=>t.date===today&&t.completed);
+    const pending = DB.tasks.filter(t=>t.date===today&&!t.completed);
+    const eveningBody = `Done: ${done.length} ✅  Pending: ${pending.length} 📋`
+      +(done.length?'\n'+fmtTasksForNotif(done,3):'')
+      +(pending.length?'\n\nStill pending:\n'+fmtTasksForNotif(pending,3):'');
+    notifs.push({id:90000002, title:'🌙 Good Evening, Doctor Micky!', body:eveningBody.trim(),
+      schedule:{at:t22,allowWhileIdle:true}, channelId:'daily_summaries', sound:'default'});
+
+  } else if(now < t22){
+    const done    = DB.tasks.filter(t=>t.date===today&&t.completed);
+    const pending = DB.tasks.filter(t=>t.date===today&&!t.completed);
+    const eveningBody = `Done: ${done.length} ✅  Pending: ${pending.length} 📋`
+      +(done.length?'\n'+fmtTasksForNotif(done,3):'')
+      +(pending.length?'\n\nStill pending:\n'+fmtTasksForNotif(pending,3):'');
+    notifs.push({id:90000002, title:'🌙 Good Evening, Doctor Micky!', body:eveningBody.trim(),
+      schedule:{at:t22,allowWhileIdle:true}, channelId:'daily_summaries', sound:'default'});
+
+    const tomTasks    = DB.tasks.filter(t=>t.date===tom);
+    const tomMorning  = tomTasks.length===0
+      ? 'No tasks scheduled for tomorrow yet.'
+      : `Tomorrow's tasks (${tomTasks.length}):\n${fmtTasksForNotif(tomTasks)}`;
+    notifs.push({id:90000003, title:'☀️ Good Morning, Doctor Micky!', body:tomMorning,
+      schedule:{at:new Date(`${tom}T07:00:00`),allowWhileIdle:true}, channelId:'daily_summaries', sound:'default'});
+
+  } else {
+    const tomTasks   = DB.tasks.filter(t=>t.date===tom);
+    const tomMorning = tomTasks.length===0
+      ? 'No tasks scheduled for tomorrow yet.'
+      : `Tomorrow's tasks (${tomTasks.length}):\n${fmtTasksForNotif(tomTasks)}`;
+    notifs.push({id:90000003, title:'☀️ Good Morning, Doctor Micky!', body:tomMorning,
+      schedule:{at:new Date(`${tom}T07:00:00`),allowWhileIdle:true}, channelId:'daily_summaries', sound:'default'});
+
+    const tomDone = DB.tasks.filter(t=>t.date===tom&&t.completed);
+    const tomPend = DB.tasks.filter(t=>t.date===tom&&!t.completed);
+    const tomEvening = `Done: ${tomDone.length} ✅  Pending: ${tomPend.length} 📋`;
+    notifs.push({id:90000004, title:'🌙 Good Evening, Doctor Micky!', body:tomEvening,
+      schedule:{at:new Date(`${tom}T22:00:00`),allowWhileIdle:true}, channelId:'daily_summaries', sound:'default'});
+  }
+
+  if(notifs.length) await window.NotificationManager.schedule({ notifications: notifs });
 }
 
 async function testNotification(){
-  const LN=getLN();
-  if(LN){
-    try{
-      await LN.requestPermissions(); // Ask permission right before test
-      await LN.schedule({notifications:[{
-        id:99999999,title:'🔔 Native Push Success!',
-        body:'Your device is natively receiving push notifications.',
-        schedule:{at:new Date(Date.now()+3000),allowWhileIdle:true},
-        channelId:'task_reminders',sound:'default'
-      }]});
-      showToast('Close the app! Notification arriving in 3 seconds');
-    }catch(e){showToast('Native Push Error: '+e.message);}
-  } else {
-    setTimeout(()=>showInAppNotif('Test Notification','This is just an IN-APP fallback. Real native Push requires Capacitor builds.','check'),1000);
-    showToast('Falling back to in-app notification');
-  }
   closeSheet('settings-sheet');
+  const LN = getLN();
+  if(LN){
+    await window.NotificationManager.schedule({ notifications:[{
+      id: 99999999,
+      title: '🔔 Native Push Success!',
+      body: 'Your device is receiving native push notifications correctly.',
+      schedule: { at: new Date(Date.now()+3000), allowWhileIdle: true },
+      channelId: 'task_reminders',
+      sound: 'default'
+    }]});
+    showToast('📲 Close the app — notification in 3 s');
+  } else {
+    setTimeout(()=>showInAppNotif('Test Notification','In-app fallback — native requires a Capacitor build.','check'),1000);
+    showToast('Web fallback: in-app notification');
+  }
 }
 
 // ════════════════════════════════════════════════════════════
